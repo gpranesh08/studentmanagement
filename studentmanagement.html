@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Management Login</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, sans-serif;
+}
+
+body{
+    min-height:100vh;
+    padding:24px;
+    background:linear-gradient(135deg,#e8f7ff,#f8fbff);
+}
+
+.login-box{
+    width:350px;
+    margin:12vh auto 0;
+    background:#fff;
+    padding:30px;
+    border-radius:10px;
+    box-shadow:0 5px 20px rgba(0,0,0,.3);
+}
+
+#home-page{
+    display:none;
+    width:min(1080px,100%);
+    margin:0 auto;
+}
+
+#home-page header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:20px;
+    padding:8px 0 28px;
+}
+
+#home-page header h1{
+    color:#123047;
+    font-size:30px;
+}
+
+#home-page header p{
+    margin-top:6px;
+    color:#60798d;
+}
+
+.home-actions{
+    display:flex;
+    gap:10px;
+}
+
+.home-actions button{
+    width:auto;
+    padding:10px 16px;
+}
+
+#logout-button{
+    background:#6c757d;
+}
+
+#logout-button:hover{
+    background:#545b62;
+}
+
+.dashboard-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+}
+
+.stat-card,
+.welcome-panel,
+.quick-actions{
+    background:#fff;
+    border:1px solid #d9e8f2;
+    border-radius:10px;
+    box-shadow:0 8px 24px rgba(31,77,104,.08);
+}
+
+.stat-card{
+    padding:22px;
+}
+
+.stat-card span{
+    color:#678194;
+    font-size:14px;
+}
+
+.stat-card strong{
+    display:block;
+    margin-top:8px;
+    color:#123047;
+    font-size:30px;
+}
+
+.welcome-panel{
+    grid-column:span 2;
+    padding:26px;
+}
+
+.welcome-panel h2,
+.quick-actions h2{
+    color:#123047;
+    font-size:20px;
+}
+
+.welcome-panel p{
+    margin-top:10px;
+    color:#60798d;
+}
+
+.quick-actions{
+    padding:26px;
+}
+
+.quick-actions button{
+    margin-top:18px;
+}
+
+@media (max-width:700px){
+    body{
+        padding:16px;
+    }
+
+    #home-page header{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+
+    .dashboard-grid{
+        grid-template-columns:1fr;
+    }
+
+    .welcome-panel{
+        grid-column:auto;
+    }
+}
+
+.login-box h2{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+#message{
+    min-height:20px;
+    margin-top:15px;
+    text-align:center;
+    font-size:14px;
+}
+
+#message.error{
+    color:#d93025;
+}
+
+#message.success{
+    color:#188038;
+}
+
+.input-box{
+    margin-bottom:15px;
+}
+
+.input-box input{
+    width:100%;
+    padding:12px;
+    border:1px solid #ccc;
+    border-radius:5px;
+    font-size:16px;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    background:#4facfe;
+    color:white;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+    font-size:16px;
+}
+
+button:hover{
+    background:#0077ff;
+}
+</style>
+
+</head>
+<body>
+
+<div class="login-box">
+    <h2>Login</h2>
+
+    <form id="login-form">
+        <div class="input-box">
+            <input type="email" id="email" name="email" placeholder="Email address" autocomplete="email" required>
+        </div>
+
+        <div class="input-box">
+            <input type="password" id="password" name="password" placeholder="Password" autocomplete="current-password" minlength="6" required>
+        </div>
+
+        <button type="submit" id="login-button">Login</button>
+        <button type="button" id="create-account-button">Create account</button>
+        <p id="message" role="status" aria-live="polite"></p>
+    </form>
+</div>
+
+<section id="home-page">
+    <header>
+        <div>
+            <h1>Student Management</h1>
+            <p>Logged in as <strong id="logged-in-email"></strong></p>
+        </div>
+        <div class="home-actions">
+            <button type="button" id="new-account-home-button">Create account</button>
+            <button type="button" id="logout-button">Log out</button>
+        </div>
+    </header>
+
+    <div class="dashboard-grid">
+        <article class="stat-card">
+            <span>Total students</span>
+            <strong>128</strong>
+        </article>
+        <article class="stat-card">
+            <span>Active courses</span>
+            <strong>12</strong>
+        </article>
+        <article class="stat-card">
+            <span>Attendance rate</span>
+            <strong>94%</strong>
+        </article>
+        <article class="welcome-panel">
+            <h2>Welcome back</h2>
+            <p>Keep student records, courses, and daily attendance organized from one place.</p>
+        </article>
+        <article class="quick-actions">
+            <h2>Quick actions</h2>
+            <button type="button" id="new-account-home-button-secondary">Add student account</button>
+        </article>
+    </div>
+</section>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+  import {
+    getAuth,
+        createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+        onAuthStateChanged,
+    signOut
+  } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyD1GDLQy8u4KtUOT44u3YHNrpckKokiURk",
+    authDomain: "student-management-636ae.firebaseapp.com",
+    projectId: "student-management-636ae",
+    storageBucket: "student-management-636ae.firebasestorage.app",
+    messagingSenderId: "630350304225",
+    appId: "1:630350304225:web:75471c7cbc55c58d79f8a0",
+    measurementId: "G-9KJ3CDQHM7"
+  };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const loginForm = document.querySelector("#login-form");
+    const loginButton = document.querySelector("#login-button");
+    const createAccountButton = document.querySelector("#create-account-button");
+    const message = document.querySelector("#message");
+    const loginBox = document.querySelector(".login-box");
+    const homePage = document.querySelector("#home-page");
+    const loggedInEmail = document.querySelector("#logged-in-email");
+    const newAccountHomeButton = document.querySelector("#new-account-home-button");
+    const newAccountHomeButtonSecondary = document.querySelector("#new-account-home-button-secondary");
+    const logoutButton = document.querySelector("#logout-button");
+
+    const showHomePage = (user) => {
+        loggedInEmail.textContent = user.email || "your account";
+        loginBox.style.display = "none";
+        homePage.style.display = "block";
+    };
+
+    const showCreateAccountForm = () => {
+        loginBox.style.display = "block";
+        homePage.style.display = "none";
+        document.querySelector(".login-box h2").textContent = "Create a new account";
+        loginButton.style.display = "none";
+        createAccountButton.style.display = "block";
+        document.querySelector("#email").focus();
+    };
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            showHomePage(user);
+        }
+    });
+
+    const getCredentials = () => ({
+        email: document.querySelector("#email").value.trim(),
+        password: document.querySelector("#password").value
+    });
+
+    const showAuthError = (error) => {
+        const errors = {
+            "auth/invalid-credential": "Incorrect email or password. Create an account or check your password.",
+            "auth/invalid-email": "Enter a valid email address.",
+            "auth/email-already-in-use": "This email already has an account. Use Login instead.",
+            "auth/weak-password": "Password must be at least 6 characters.",
+            "auth/user-disabled": "This account has been disabled.",
+            "auth/operation-not-allowed": "Enable Email/Password sign-in in Firebase Console.",
+            "auth/unauthorized-domain": "Add this website domain to Firebase Authentication authorized domains.",
+            "auth/too-many-requests": "Too many attempts. Try again later."
+        };
+        message.textContent = errors[error.code] || "Firebase could not complete the request.";
+        message.className = "error";
+    };
+
+    loginForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        message.textContent = "Signing in...";
+        message.className = "";
+        loginButton.disabled = true;
+
+        const { email, password } = getCredentials();
+
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            loginForm.reset();
+            showHomePage(auth.currentUser);
+        } catch (error) {
+            showAuthError(error);
+        } finally {
+            loginButton.disabled = false;
+        }
+    });
+
+    createAccountButton.addEventListener("click", async () => {
+        const { email, password } = getCredentials();
+        message.textContent = "Creating account...";
+        message.className = "";
+        loginButton.disabled = true;
+        createAccountButton.disabled = true;
+
+        try {
+            await createUserWithEmailAndPassword(auth, email, password);
+            loginForm.reset();
+            showHomePage(auth.currentUser);
+        } catch (error) {
+            showAuthError(error);
+        } finally {
+            loginButton.disabled = false;
+            createAccountButton.disabled = false;
+        }
+    });
+
+    newAccountHomeButton.addEventListener("click", showCreateAccountForm);
+    newAccountHomeButtonSecondary.addEventListener("click", showCreateAccountForm);
+
+    logoutButton.addEventListener("click", async () => {
+        await signOut(auth);
+        homePage.style.display = "none";
+        loginBox.style.display = "block";
+        document.querySelector(".login-box h2").textContent = "Login";
+        loginButton.style.display = "block";
+        createAccountButton.style.display = "block";
+    });
+</script>
+</html>
+
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyD1GDLQy8u4KtUOT44u3YHNrpckKokiURk",
+    authDomain: "student-management-636ae.firebaseapp.com",
+    projectId: "student-management-636ae",
+    storageBucket: "student-management-636ae.firebasestorage.app",
+    messagingSenderId: "630350304225",
+    appId: "1:630350304225:web:51816fafafd279c079f8a0",
+    measurementId: "G-3SW8L2QDW9"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
